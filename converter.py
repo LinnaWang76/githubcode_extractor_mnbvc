@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
+import sys
 import argparse
 import json
 import logging
@@ -10,7 +11,6 @@ import hashlib as hs
 
 from typing import List
 from pathlib import PurePosixPath, Path
-
 
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
@@ -30,9 +30,15 @@ class CodeFileInstance:
         self.target_encoding = target_encoding
         text = None
         if self._encoding is not None:
-            text = charset_mnbvc.api.convert_encoding(file_bytes, self._encoding, self.target_encoding)
+            try:
+                data = file_bytes.decode(encoding=self.target_encoding)
+                text = data.encode(encoding=target_encoding).decode(encoding=target_encoding)
+            except Exception as err:
+                sys.stderr.write(f"Error: {str(err)}\n")
+            # text = charset_mnbvc.api.convert_encoding(file_bytes, self._encoding, self.target_encoding)
+            # text可能会转码失败，输出的还是原编码文本
         self._text = text
-        self._size = file_path.stat()
+        self._size = file_path.stat().st_size
         self._md5 = self.__get_content_md5(file_bytes)
 
     @property
@@ -95,8 +101,11 @@ class RepoInstance:
         return self._files
 
     def files_append(self, file_obj: CodeFileInstance):
-        if file_obj.encoding is not None:
-            self._files.append(file_obj)
+        if file_obj.encoding is None:
+            return
+        if not isinstance(file_obj.text, str):
+            return
+        self._files.append(file_obj)
 
     def get_dict(self):
         return {
@@ -112,7 +121,7 @@ class Zipfile2JsonL:
         self.max_jsonl_size = 500 * 1024 * 1024
         self.repo_list = list()
         self.chunk_counter = 0
-        self.jsonl_file_handler = open(self.get_jsonl_file, "w")
+        self.jsonl_file_handler = open(self.get_jsonl_file(), "w")
         self.clean_src_file = clean_src_file
 
     def get_zipfile(self, file_path):
@@ -125,7 +134,10 @@ class Zipfile2JsonL:
             repo.files_append(
                 CodeFileInstance(repo_root, file, self.target_encoding)
             )
-        repo_root.unlink(missing_ok=True)
+            file.unlink(missing_ok=True)
+        for d in repo_root.iterdir():
+            d.rmdir()
+        repo_root.rmdir()
         if self.clean_src_file:
             file_path.unlink(missing_ok=True)
         return repo.get_dict()
@@ -150,10 +162,13 @@ class Zipfile2JsonL:
             self.dump_to_jsonl(repo_info)
             exec_time = time.perf_counter() - start_time
             logger.info(f'zip文件 {file} 处理完成，耗时 {exec_time:.2f} 秒')
+        self.jsonl_file_handler.close()
+
 
 def process_zips(zip_root, output, clean_src_file):
     handler = Zipfile2JsonL(output_root=output, target_encoding="utf-8", clean_src_file=clean_src_file)
     handler(root_dir=zip_root)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

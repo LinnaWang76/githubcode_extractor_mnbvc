@@ -9,25 +9,19 @@ pip install -r requirements.txt
 
 ### 输出的jsonl格式说明
 
-对于每一个仓库，他的json结构层次如下：
-
-```python
+1. 每个jsonl文件，其大小略大于500MB。每行是一个文本的数据，对应一个代码仓库里的文本文件。
+2. 对于每一行数据，其最高层次结构如下。
+```json
 {
-    'name': '仓库名称',
-    'files': ['文件的json'],
-}
-```
-
-将每一行为一个文件，文件的json结构层次如下：
-
-```python
-{
-    "name": "文件名称",
-    "ext": "文件后缀",
-    "path": "文件在仓库的相对路径",
-    "size": "文件大小",
-    "source_encoding": "文件的原始编码",
-    "md5": "文件的md5值",
+    "来源":"github",
+    "仓库名":"esbatmop/MNBVC",
+    "path":"/main/README.md",
+    "文件名":"README.md",
+    "ext": "md",
+    "size":123456,
+    "原始编码":"GBK",
+    "md5":"文件的md5值",
     "text": "文件的内容，utf8格式"
 }
+
 ```

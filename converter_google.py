@@ -16,16 +16,9 @@ from pathlib import PurePosixPath, Path
 from charset_mnbvc import api
 
 #######################################################
-# 换新的平台的时候先把下面的debug_mode调成True跑一下
-# name_position对应RepoInstance.name的解析索引，将其修改成输出的元祖中仓库名对应的索引即可
-# 比如输出为：('zips', 'zipout-10000115', 'list-master', 'list.c'), 其中的 'list-master' 为仓库名
-# 那么将下面的name_position的值设为2即可
-debug_mode = False
-name_position = 2
 # 其他变量
 repos_folder = '/Users/washing/Downloads/google'    # 存放仓库们的目录，目录下是一个个仓库
 output_folder = './out'    # jsonl输出的目录
-plateform = 'google'       # 仓库来自哪个平台
 clean_src_file = False     # 是否删除源文件
 #######################################################
 
@@ -104,42 +97,42 @@ class CodeFileInstance:
         }
 
 
-class RepoInstance:
-    def __init__(self, folder_name: str, plateform: str):
-        super(RepoInstance, self).__init__()
-        self.folder_name = folder_name
-        self._plateform = plateform
-        self._files: List[CodeFileInstance] = list()
-
-    @property
-    def name(self):
-        return self.folder_name
-
-    @property
-    def files(self):
-        return self._files
-
-    def files_append(self, file_obj: CodeFileInstance):
-        if file_obj.encoding is None:
-            return
-        if not isinstance(file_obj.text, str):
-            return
-        self._files.append(file_obj)
-
-    def get_dict_list(self):
-        ret = list()
-        for f in self.files:
-            dic = f.get_dict()
-            dic['plateform'] = self._plateform
-            dic['repo_name'] = self.name
-            # yield dic
-            ret.append(dic)
-        return ret
-        # return {
-        #     "repo": self.name,
-        #     "files": [f.get_dict() for f in self.files]
-        # }
-
+#class RepoInstance:
+#    def __init__(self, folder_name: str, plateform: str):
+#        super(RepoInstance, self).__init__()
+#        self.folder_name = folder_name
+#        self._plateform = plateform
+#        self._files: List[CodeFileInstance] = list()
+#
+#    @property
+#    def name(self):
+#        return self.folder_name
+#
+#    @property
+#    def files(self):
+#        return self._files
+#
+#    def files_append(self, file_obj: CodeFileInstance):
+#        if file_obj.encoding is None:
+#            return
+#        if not isinstance(file_obj.text, str):
+#            return
+#        self._files.append(file_obj)
+#
+#    def get_dict_list(self):
+#        ret = list()
+#        for f in self.files:
+#            dic = f.get_dict()
+#            dic['plateform'] = self._plateform
+#            dic['repo_name'] = self.name
+#            # yield dic
+#            ret.append(dic)
+#        return ret
+#        # return {
+#        #     "repo": self.name,
+#        #     "files": [f.get_dict() for f in self.files]
+#        # }
+#
 
 class Zipfile2JsonL:
     def __init__(self, output_root, target_encoding="utf-8", clean_src_file=False, plateform="github"):
@@ -152,41 +145,60 @@ class Zipfile2JsonL:
         self.clean_src_file = clean_src_file
         self.plateform = plateform
 
-    def get_zipfile(self, file_path):
-        repo_root = Path(file_path)
+    def parse_and_save(self, folder):
+        repo_root = Path(folder)
         file_list = repo_root.rglob("**/*.*")
-        repo = None
         for file in file_list:
-            if not file.is_file(): continue
-            if repo is None:
-                repo = RepoInstance(folder_name=repo_root.parts[-1], plateform=self.plateform)
-            repo.files_append(
-                CodeFileInstance(repo_root, file, self.target_encoding)
-            )
-        if self.clean_src_file: # 删除源文件
-            if file_path.is_file(): file_path.unlink(missing_ok=True)
-            else: shutil.rmtree(file_path)
-        return repo.get_dict_list()
+            if file.is_file():
+                code = CodeFileInstance(repo_root, file, self.target_encoding)
+                if code.encoding is not None and isinstance(code.text, str):
+                    dic = code.get_dict()
+                    dic['plateform'] = 'google'
+                    dic['repo_name'] = repo_root.parts[-1]
+                    with open(self.get_jsonl_file(), "a", encoding="utf-8")as a:
+                        a.write(json.dumps(dic, ensure_ascii=False) + "\n")
+                    if os.path.getsize(self.get_jsonl_file()) > self.max_jsonl_size:
+                        self.chunk_counter += 1
+        if self.clean_src_file:  # 删除源文件
+            shutil.rmtree(folder)
 
     def get_jsonl_file(self):
-        return self.output / f"githubcode.{self.chunk_counter}.jsonl"
+        return self.output / f"googleSourceCode.{self.chunk_counter}.jsonl"
 
-    def dump_to_jsonl(self, repo_file_info_list):
-        for line in repo_file_info_list:
-            with open(self.get_jsonl_file(), "a", encoding='utf-8')as a:
-                a.write(json.dumps(line, ensure_ascii=False) + "\n")
-            if os.path.getsize(self.get_jsonl_file()) > self.max_jsonl_size:
-                self.chunk_counter += 1
+    #def get_zipfile(self, file_path):
+    #    repo_root = Path(file_path)
+    #    file_list = repo_root.rglob("**/*.*")
+    #    repo = None
+    #    for file in file_list:
+    #        if not file.is_file(): continue
+    #        if repo is None:
+    #            repo = RepoInstance(folder_name=repo_root.parts[-1], plateform=self.plateform)
+    #        repo.files_append(
+    #            CodeFileInstance(repo_root, file, self.target_encoding)
+    #        )
+    #    if self.clean_src_file: # 删除源文件
+    #        if file_path.is_file(): file_path.unlink(missing_ok=True)
+    #        else: shutil.rmtree(file_path)
+    #    return repo.get_dict_list()
+
+    #def dump_to_jsonl(self, repo_file_info_list):
+    #    for line in repo_file_info_list:
+    #        with open(self.get_jsonl_file(), "a", encoding='utf-8')as a:
+    #            a.write(json.dumps(line, ensure_ascii=False) + "\n")
+    #        if os.path.getsize(self.get_jsonl_file()) > self.max_jsonl_size:
+    #            self.chunk_counter += 1
 
     def __call__(self, root_dir):
         folder_list = glob.glob(root_dir+"/*")
         print(root_dir, len(folder_list))
         for folder in folder_list:
             if os.path.isdir(folder):
+                logger.info(f'仓库 {folder} 开始处理')
                 start_time = time.perf_counter()
-                repo_file_info_list = self.get_zipfile(folder)
-                print("repo: ",folder,"repo_file_info_list:", len(list(repo_file_info_list)))
-                self.dump_to_jsonl(repo_file_info_list)
+                #repo_file_info_list = self.get_zipfile(folder)
+                #print("repo: ",folder,"repo_file_info_list:", len(list(repo_file_info_list)))
+                #self.dump_to_jsonl(repo_file_info_list)
+                self.parse_and_save(folder)
                 exec_time = time.perf_counter() - start_time
                 logger.info(f'仓库 {folder} 处理完成，耗时 {exec_time:.2f} 秒')
 

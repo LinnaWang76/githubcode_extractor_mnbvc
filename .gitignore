@@ -5,7 +5,8 @@ __pycache__/
 .DS_Store
 # C extensions
 *.so
-
+.temp_done
+.done
 # Distribution / packaging
 .Python
 build/

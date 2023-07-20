@@ -186,6 +186,7 @@ class Zipfile2JsonL:
         if self.clean_src_file: # 删除源文件
             if file_path.is_file(): file_path.unlink(missing_ok=True)
             else: shutil.rmtree(file_path)
+        if repo is None: return list()
         return repo.get_dict_list()
 
     def get_jsonl_file(self):

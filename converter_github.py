@@ -9,19 +9,12 @@ import shutil
 import logging
 import time
 import zipfile
+import argparse
 import hashlib as hs
 
 from typing import List
 from pathlib import PurePosixPath, Path
 from charset_mnbvc import api
-
-#######################################################
-zipfile_folder = "./zips"  # 存放zip文件的目录
-jsonlfile_folder = "./out" # 保存jsonl文件的目录
-Tfile_path = "./T"         # 那个T文件的地址
-plateform = 'github'       # 仓库来自哪个平台
-clean_src_file = False     # 是否删除源文件
-#######################################################
 
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
@@ -146,14 +139,39 @@ class Zipfile2JsonL:
         return self.output / f"githubcode.{self.chunk_counter}.jsonl"
 
     def __call__(self, zip_path):
-        zip_path = Path(zip_path)
+        #zip_path = Path(zip_path)
         assert zip_path.exists(), FileNotFoundError(str(root_dir))
         self.get_zipfile(zip_path)
         if self.clean_src_file is True:
             zip_path.unlink()
 
 if __name__ == "__main__":
-    fs = glob.glob(zipfile_folder + "/*.zip")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-z", "--zips", type=str, required=True, help="存放zip文件的目录")
+    parser.add_argument("-j", "--jsonl", type=str, required=True, help="保存jsonl文件的目录")
+    parser.add_argument("-t", "--tfile", type=str, default="./T", help="爬取时使用的T文件目录")
+    parser.add_argument("-p", "--plateform", type=str, default="github", help="仓库来自哪个平台")
+    parser.add_argument("--clean", action="store_true", default=False, help="是否删除源文件")
+
+    args = parser.parse_args()
+    zipfile_folder = args.zips
+    jsonlfile_folder = args.jsonl
+    Tfile_path = args.tfile
+    plateform = args.plateform
+    clean_src_file = args.clean
+
+    print(args)
+
+    ########################################################
+    #zipfile_folder = "./zips"  # 存放zip文件的目录
+    #jsonlfile_folder = "./out" # 保存jsonl文件的目录
+    #Tfile_path = "./T"         # 那个T文件的地址
+    #plateform = 'github'       # 仓库来自哪个平台
+    #clean_src_file = False     # 是否删除源文件
+    ########################################################
+
+    p = Path(zipfile_folder)
+    fs = p.glob("**/*.zip")
     id2author = dict()  # id（压缩包名）和作者对应
     with open(Tfile_path,"r",encoding="utf-8")as r: data=r.readlines()
     for line in data:
@@ -162,7 +180,8 @@ if __name__ == "__main__":
         id2author[k] = v
     for f in fs:
         # 已经下载好的仓库没有作者信息，以仓库id信息代替
-        rid = f.split("/")[-1][:-4]
-        author = id2author[rid]
-        h = Zipfile2JsonL(jsonlfile_folder, clean_src_file=clean_src_file, plateform=plateform, author=author) 
-        h(f)
+        rid = f.stem
+        print(rid, type(rid), type(f))
+        #author = id2author[rid]
+        #h = Zipfile2JsonL(jsonlfile_folder, clean_src_file=clean_src_file, plateform=plateform, author=author) 
+        #h(f)

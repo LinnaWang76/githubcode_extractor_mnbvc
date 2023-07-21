@@ -5,7 +5,13 @@ github code dataset from the mnbvc project
 ```
 pip install -r requirements.txt
 ```
+# Run Code
+目前已有了针对googleSourceCode和GitHub仓库的代码语料提取脚本。
 
+其中
+- googleSourceCode代码的输入是仓库目录的父目录。相关参数需要在脚本内指定；
+- GitHub代码的输入是仓库压缩包的父目录，相关参数以传参的形式确定，请通过运行`python converter_github.py --help`了解详情；
+- 更多代码仓库预料提取可参照`converter.py`自行修改。
 
 ### 输出的jsonl格式说明
 

@@ -109,15 +109,13 @@ class Zipfile2JsonL:
                 try:
                     if Zfile.is_dir(): continue
                     filepath = Zfile.filename
-                    if filepath in self.temp_done_set: continue
                     code = CodeFileInstance(zip_path, Zfile, target_encoding="utf-8", zf=zf)
                     if code.encoding is None or not isinstance(code.text, str): continue
                     dic = code.get_dict()
                     dic["plateform"] = self.plateform
                     dic["repo_name"] = self.author + "/" + file.relative_to(repo_root).parts[0]
-                    with open(self.get_jsonl_file(), "a", encoding="utf-8") as a1, open(".temp_done", "a", encoding="utf-8")as a2:
+                    with open(self.get_jsonl_file(), "a", encoding="utf-8") as a1:
                         a1.write(json.dumps(dic, ensure_ascii=False) + "\n")
-                        a2.write(str(file)+"\n")
                 except:
                     pass
 
@@ -134,28 +132,19 @@ class Zipfile2JsonL:
             except:
                 print("unzip error:",file_path)
             return
-        # 记录写入的文件，防止在某个仓库处理过程中停止后导致该仓库前面写过的文件重复写入
-        temp_done_set = set()
-        if os.path.exists(".temp_done"):
-            with open(".temp_done","r",encoding="utf-8")as r:
-                temp_done_set.update([i.strip() for i in r.readlines()])
         file_list = repo_root.rglob("**/*.*")
         for file in file_list:
             if not file.is_file(): continue
-            if str(file) in temp_done_set:
-                continue
             code = CodeFileInstance(repo_root, file, self.target_encoding)
             if code.encoding is None or not isinstance(code.text, str): continue
             dic = code.get_dict()
             dic["plateform"] = self.plateform
             dic["repo_name"] = self.author + "/" + file.relative_to(repo_root).parts[0]
-            with open(self.get_jsonl_file(), "a", encoding="utf-8") as a1, open(".temp_done", "a", encoding="utf-8")as a2:
+            with open(self.get_jsonl_file(), "a", encoding="utf-8") as a1:
                 a1.write(json.dumps(dic, ensure_ascii=False) + "\n")
-                a2.write(str(file)+"\n")
             if os.path.getsize(self.get_jsonl_file()) > self.max_jsonl_size:
                 self.chunk_counter += 1
         shutil.rmtree(repo_root)  # 删除解压出来的目录
-        open(".temp_done","w",encoding="utf-8").close()
 
     def get_jsonl_file(self):
         return self.output / f"githubcode.{self.chunk_counter}.jsonl"

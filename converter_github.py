@@ -90,7 +90,8 @@ class CodeFileInstance:
             "text": self.text
         }
 
-
+#公共变量
+chunk_counter = 0
 class Zipfile2JsonL:
     def __init__(self, output_root, target_encoding="utf-8", clean_src_file=False, plateform="github", author=""):
         if not os.path.exists(output_root): os.makedirs(output_root)
@@ -98,7 +99,7 @@ class Zipfile2JsonL:
         self.target_encoding = target_encoding
         self.max_jsonl_size = 500 * 1024 * 1024
         self.repo_list = list()
-        self.chunk_counter = 0
+        global chunk_counter
         self.clean_src_file = clean_src_file
         self.plateform = plateform
         self.author = author
@@ -143,11 +144,11 @@ class Zipfile2JsonL:
             with open(self.get_jsonl_file(), "a", encoding="utf-8") as a1:
                 a1.write(json.dumps(dic, ensure_ascii=False) + "\n")
             if os.path.getsize(self.get_jsonl_file()) > self.max_jsonl_size:
-                self.chunk_counter += 1
+                chunk_counter += 1
         shutil.rmtree(repo_root)  # 删除解压出来的目录
 
     def get_jsonl_file(self):
-        return self.output / f"githubcode.{self.chunk_counter}.jsonl"
+        return self.output / f"githubcode.{chunk_counter}.jsonl"
 
     def __call__(self, zip_path):
         #zip_path = Path(zip_path)

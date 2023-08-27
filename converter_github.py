@@ -202,8 +202,8 @@ if __name__ == "__main__":
     for f in fs:
         # 已经下载好的仓库没有作者信息，以仓库id信息代替
         rid = f.stem
-        author = id2author[rid]
         try:
+            author = id2author[rid]
             h = Zipfile2JsonL(jsonlfile_folder, clean_src_file=clean_src_file, plateform=plateform, author=author) 
             h(f)
         except:

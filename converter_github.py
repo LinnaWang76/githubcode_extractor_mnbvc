@@ -96,7 +96,6 @@ class Zipfile2JsonL:
         if not os.path.exists(output_root): os.makedirs(output_root)
         self.output = Path(output_root)
         self.target_encoding = target_encoding
-        self.max_jsonl_size = 500 * 1024 * 1024
         self.repo_list = list()
         self.chunk_counter = chunk_counter
         self.clean_src_file = clean_src_file
@@ -205,7 +204,7 @@ if __name__ == "__main__":
             author = id2author[rid]
             h = Zipfile2JsonL(chunk_counter, jsonlfile_folder, clean_src_file=clean_src_file, plateform=plateform, author=author) 
             h(f)
-            if os.path.getsize(h.get_jsonl_file()) > self.max_jsonl_size:
+            if os.path.getsize(h.get_jsonl_file()) > 500 * 1024 * 1024:
                 chunk_counter += 1
         except:
             pass

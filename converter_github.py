@@ -90,16 +90,15 @@ class CodeFileInstance:
             "text": self.text
         }
 
-#公共变量
-chunk_counter = 0
+
 class Zipfile2JsonL:
-    def __init__(self, output_root, target_encoding="utf-8", clean_src_file=False, plateform="github", author=""):
+    def __init__(self, chunk_counter, output_root, target_encoding="utf-8", clean_src_file=False, plateform="github", author=""):
         if not os.path.exists(output_root): os.makedirs(output_root)
         self.output = Path(output_root)
         self.target_encoding = target_encoding
         self.max_jsonl_size = 500 * 1024 * 1024
         self.repo_list = list()
-        global chunk_counter
+        self.chunk_counter = chunk_counter
         self.clean_src_file = clean_src_file
         self.plateform = plateform
         self.author = author
@@ -152,8 +151,6 @@ class Zipfile2JsonL:
             dic["repo_name"] = self.author + "/" + file.relative_to(repo_root).parts[0]
             with open(self.get_jsonl_file(), "a", encoding="utf-8") as a1:
                 a1.write(json.dumps(dic, ensure_ascii=False) + "\n")
-            if os.path.getsize(self.get_jsonl_file()) > self.max_jsonl_size:
-                chunk_counter += 1
         shutil.rmtree(repo_root)  # 删除解压出来的目录
 
     def get_jsonl_file(self):
@@ -190,6 +187,8 @@ if __name__ == "__main__":
     #plateform = 'github'       # 仓库来自哪个平台
     #clean_src_file = False     # 是否删除源文件
     ########################################################
+    #公共变量
+    chunk_counter = 0
 
     p = Path(zipfile_folder)
     fs = p.glob("**/*.zip")
@@ -204,7 +203,9 @@ if __name__ == "__main__":
         rid = f.stem
         try:
             author = id2author[rid]
-            h = Zipfile2JsonL(jsonlfile_folder, clean_src_file=clean_src_file, plateform=plateform, author=author) 
+            h = Zipfile2JsonL(chunk_counter, jsonlfile_folder, clean_src_file=clean_src_file, plateform=plateform, author=author) 
             h(f)
+            if os.path.getsize(h.get_jsonl_file()) > self.max_jsonl_size:
+                chunk_counter += 1
         except:
             pass

@@ -125,8 +125,16 @@ class Zipfile2JsonL:
         # 因为仓库压缩包的文件名不一定是仓库的文件名，所以专门指定一个路径
         repo_root = file_path.parent / ('zipout-' + file_path.stem)
         try:
-            with zipfile.ZipFile(file_path, "r") as zf:
-                zf.extractall(repo_root)
+            try:
+                with zipfile.ZipFile(file_path, "r") as zf:
+                    zf.extractall(repo_root)
+            except zipfile.BadZipFile:  # 解压过程中遇到 Bad magic number for central directory 问题的解决办法
+                if repo_root.exists(): shutil.rmtree(repo_root)
+                with open(file_path, 'rb')as r: data=r.read()
+                idx = data.find(b"PK\005\006")
+                data = io.BytesIO(data[:idx+22])
+                with zipfile.ZipFile(data, 'r')as zf:
+                    zf.extractall(repo_root)
         except:  # 有的压缩包解压会报错。
             try:
                 self.extract_without_unpack(file_path)

@@ -135,7 +135,8 @@ class Zipfile2JsonL:
                 data = io.BytesIO(data[:idx+22])
                 with zipfile.ZipFile(data, 'r')as zf:
                     zf.extractall(repo_root)
-        except:  # 有的压缩包解压会报错。
+        except:  
+        # 有的压缩包解压会报错。
             try:
                 self.extract_without_unpack(file_path)
             except:

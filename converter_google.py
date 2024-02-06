@@ -14,6 +14,7 @@ import hashlib as hs
 from typing import List
 from pathlib import PurePosixPath, Path
 from charset_mnbvc import api
+from datetime import datetime
 
 #######################################################
 # 其他变量
@@ -85,15 +86,16 @@ class CodeFileInstance:
 
     def get_dict(self):
         return {
-            "plateform": "",
-            "repo_name": "",
-            "name": self.name,
+            "来源": "",
+            "仓库名": "",
+            "文件名": self.name,
             "ext": self.ext,
             "path": self.path,
             "size": self.size,
-            "source_encoding": self.encoding,
+            "原始编码": self.encoding,
             "md5": self.md5,
-            "text": self.text
+            "text": self.text,
+            "时间": datetime.now().strftime('%Y%m%d')
         }
 
 
@@ -153,8 +155,8 @@ class Zipfile2JsonL:
                 code = CodeFileInstance(repo_root, file, self.target_encoding)
                 if code.encoding is not None and isinstance(code.text, str):
                     dic = code.get_dict()
-                    dic['plateform'] = 'google'
-                    dic['repo_name'] = repo_root.parts[-1]
+                    dic['来源'] = 'google'
+                    dic['仓库名'] = repo_root.parts[-1]
                     with open(self.get_jsonl_file(), "a", encoding="utf-8")as a:
                         a.write(json.dumps(dic, ensure_ascii=False) + "\n")
                     if os.path.getsize(self.get_jsonl_file()) > self.max_jsonl_size:

@@ -18,7 +18,7 @@ from datetime import datetime
 
 #######################################################
 # 其他变量
-repos_folder = '/Users/washing/Downloads/google'    # 存放仓库们的目录，目录下是一个个仓库
+repos_folder = '/nas2/arxiv/disk3/arxiv/download/'    # 存放仓库们的目录，目录下是一个个仓库
 output_folder = './out'    # jsonl输出的目录
 clean_src_file = False     # 是否删除源文件
 #######################################################
@@ -88,9 +88,9 @@ class CodeFileInstance:
         return {
             "来源": "",
             "仓库名": "",
+            "path": self.path,
             "文件名": self.name,
             "ext": self.ext,
-            "path": self.path,
             "size": self.size,
             "原始编码": self.encoding,
             "md5": self.md5,
@@ -149,13 +149,13 @@ class Zipfile2JsonL:
 
     def parse_and_save(self, folder):
         repo_root = Path(folder)
-        file_list = repo_root.rglob("**/*.*")
+        file_list = repo_root.rglob("**/*")
         for file in file_list:
             if file.is_file():
                 code = CodeFileInstance(repo_root, file, self.target_encoding)
                 if code.encoding is not None and isinstance(code.text, str):
                     dic = code.get_dict()
-                    dic['来源'] = 'google'
+                    dic['来源'] = 'arxiv'
                     dic['仓库名'] = repo_root.parts[-1]
                     with open(self.get_jsonl_file(), "a", encoding="utf-8")as a:
                         a.write(json.dumps(dic, ensure_ascii=False) + "\n")
@@ -165,7 +165,7 @@ class Zipfile2JsonL:
             shutil.rmtree(folder)
 
     def get_jsonl_file(self):
-        return self.output / f"googleSourceCode.{self.chunk_counter}.jsonl"
+        return self.output / f"arxivCode.{self.chunk_counter}.jsonl"
 
     #def get_zipfile(self, file_path):
     #    repo_root = Path(file_path)
